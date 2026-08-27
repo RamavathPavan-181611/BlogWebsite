@@ -1,0 +1,29 @@
+{
+  "name": "blog-backend",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node -r dotenv/config app.js",
+    "seed": "node -r dotenv/config utils/seed.js",
+    "test:integration": "NODE_ENV=test MONGODB_URI='mongodb://127.0.0.1:27017/BlogPlatform_test?directConnection=true&serverSelectionTimeoutMS=2000' node -r dotenv/config ./node_modules/mocha/bin/mocha.js test/api.integration.spec.js --exit",
+    "test": "NODE_ENV=test MONGODB_URI='mongodb://127.0.0.1:27017/BlogPlatform_test?directConnection=true&serverSelectionTimeoutMS=2000' node -r dotenv/config ./node_modules/mocha/bin/mocha.js --reporter mocha-multi-reporters --reporter-options configFile=config.json test/*.js --exit"
+  },
+  "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "chai": "^4.4.1",
+    "chai-http": "^4.4.0",
+    "cors": "2.8.5",
+    "dotenv": "^16.0.3",
+    "express": "^4.22.2",
+    "express-async-errors": "3.1.1",
+    "express-rate-limit": "^8.6.2",
+    "express-validator": "^7.3.2",
+    "helmet": "^8.3.0",
+    "jsonwebtoken": "^9.0.3",
+    "mocha": "^11.7.5",
+    "mocha-multi-reporters": "^1.5.1",
+    "mongoose": "^7.8.12",
+    "sanitize-html": "^2.17.7"
+  }
+}
