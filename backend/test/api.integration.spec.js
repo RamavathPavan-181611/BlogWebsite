@@ -55,6 +55,16 @@ describe('Backend API integration', () => {
     expect(response.body.post.author).to.have.property('email', 'integration@example.com');
   });
 
+  it('reports database readiness through the health endpoint', async () => {
+    const response = await chai.request(app).get('/healthz');
+
+    expect(response).to.have.status(200);
+    expect(response.body).to.deep.equal({
+      status: 'ok',
+      database: 'connected'
+    });
+  });
+
   it('supports the authenticated my-posts route and bounded pagination', async () => {
     const response = await chai
       .request(app)

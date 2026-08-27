@@ -3,6 +3,7 @@ import cors from 'cors';
 import helmet from 'helmet';
 import 'express-async-errors';
 import dotenv from 'dotenv';
+import mongoose from 'mongoose';
 
 import connectDatabase from './config/database.js';
 import authRoutes from './routes/authRoutes.js';
@@ -40,6 +41,14 @@ app.use(express.urlencoded({ extended: true, limit: '100kb' }));
 
 app.get('/', (req, res) => {
   res.send('Blog Platform Backend is running successfully!');
+});
+
+app.get('/healthz', (req, res) => {
+  const databaseReady = mongoose.connection.readyState === 1;
+  res.status(databaseReady ? 200 : 503).json({
+    status: databaseReady ? 'ok' : 'unavailable',
+    database: databaseReady ? 'connected' : 'disconnected'
+  });
 });
 
 app.use('/api/auth', authRoutes);

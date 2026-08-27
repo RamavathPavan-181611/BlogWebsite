@@ -21,6 +21,15 @@ data. Never point it at a shared or production database.
 4. Start both applications with `npm start`. The frontend listens on port 8000
    and the backend on port 8080 by default.
 
+After starting the backend, check its readiness endpoint:
+
+```sh
+curl http://localhost:8080/healthz
+```
+
+It returns HTTP `200` when MongoDB is connected and HTTP `503` otherwise. Use
+this endpoint for a private staging uptime check or container health check.
+
 ## Backend-only workflow
 
 Copy `backend/.env.example` to `backend/.env`, install dependencies in
