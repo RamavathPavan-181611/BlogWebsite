@@ -40,6 +40,8 @@ const renderApp = (initialEntry = '/') =>
 
 const jsonResponse = (body, ok = true) => ({
   ok,
+  headers: { get: () => 'application/json' },
+  text: async () => JSON.stringify(body),
   json: async () => body
 });
 

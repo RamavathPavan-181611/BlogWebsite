@@ -2,6 +2,28 @@ import { baseURL } from './baseURL.js';
 
 const API_BASE_URL = `${baseURL}/api`;
 
+const readResponse = async (response) => {
+  const contentType = response.headers.get('content-type') || '';
+  const body = await response.text();
+  let data = {};
+
+  if (body && contentType.includes('application/json')) {
+    try {
+      data = JSON.parse(body);
+    } catch {
+      data = {};
+    }
+  } else if (body) {
+    data = { message: body };
+  }
+
+  if (!response.ok) {
+    throw new Error(data.message || `Request failed (${response.status})`);
+  }
+
+  return data;
+};
+
 const getAuthHeaders = () => {
   const token = localStorage.getItem('authToken');
   const headers = {
@@ -23,12 +45,7 @@ export const api = {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, password })
     });
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.message || 'Login failed');
-    }
-    
-    const data = await response.json();
+    const data = await readResponse(response);
     if (data.token) {
       localStorage.setItem('authToken', data.token);
     }
@@ -39,8 +56,7 @@ export const api = {
     const response = await fetch(`${API_BASE_URL}/auth/me`, {
       headers: getAuthHeaders()
     });
-    if (!response.ok) throw new Error('Failed to fetch current user');
-    return response.json();
+    return readResponse(response);
   },
 
   logout: async () => {
@@ -53,24 +69,21 @@ export const api = {
     const response = await fetch(`${API_BASE_URL}/posts`, {
       headers: getAuthHeaders()
     });
-    if (!response.ok) throw new Error('Failed to fetch posts');
-    return response.json();
+    return readResponse(response);
   },
 
   getMyPosts: async () => {
     const response = await fetch(`${API_BASE_URL}/posts/my-posts`, {
       headers: getAuthHeaders()
     });
-    if (!response.ok) throw new Error('Failed to fetch your posts');
-    return response.json();
+    return readResponse(response);
   },
 
   getPostById: async (id) => {
     const response = await fetch(`${API_BASE_URL}/posts/${id}`, {
       headers: getAuthHeaders()
     });
-    if (!response.ok) throw new Error('Failed to fetch post');
-    return response.json();
+    return readResponse(response);
   },
 
   createPost: async (postData) => {
@@ -79,11 +92,7 @@ export const api = {
       headers: getAuthHeaders(),
       body: JSON.stringify(postData)
     });
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.message || 'Failed to create post');
-    }
-    return response.json();
+    return readResponse(response);
   },
 
   updatePost: async (id, postData) => {
@@ -92,11 +101,7 @@ export const api = {
       headers: getAuthHeaders(),
       body: JSON.stringify(postData)
     });
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.message || 'Failed to update post');
-    }
-    return response.json();
+    return readResponse(response);
   },
 
   deletePost: async (id) => {
@@ -104,10 +109,6 @@ export const api = {
       method: 'DELETE',
       headers: getAuthHeaders()
     });
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.message || 'Failed to delete post');
-    }
-    return response.json();
+    return readResponse(response);
   }
 };
