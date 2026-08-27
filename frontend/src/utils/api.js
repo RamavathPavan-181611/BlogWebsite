@@ -52,6 +52,17 @@ export const api = {
     return data;
   },
 
+  register: async (registrationData) => {
+    const response = await fetch(`${API_BASE_URL}/auth/register`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(registrationData)
+    });
+    const data = await readResponse(response);
+    if (data.token) localStorage.setItem('authToken', data.token);
+    return data;
+  },
+
   getCurrentUser: async () => {
     const response = await fetch(`${API_BASE_URL}/auth/me`, {
       headers: getAuthHeaders()

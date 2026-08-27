@@ -22,6 +22,16 @@ export const validatePassword = body('password')
 
 export const validateLoginInput = [validateEmail, validatePassword];
 
+export const validateRegistrationInput = [
+  body('name').trim().isLength({ min: 2, max: 100 }).withMessage('Name must be between 2 and 100 characters'),
+  validateEmail,
+  body('password')
+    .isLength({ min: 10 })
+    .withMessage('Password must be at least 10 characters')
+    .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z\d])/)
+    .withMessage('Password must contain uppercase, lowercase, number, and special character')
+];
+
 export const validateProfileInput = [
   body('name').optional().trim().isLength({ min: 2, max: 100 }).withMessage('Name must be between 2 and 100 characters'),
   body('email').optional().isEmail().normalizeEmail().withMessage('Invalid email format'),

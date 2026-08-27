@@ -45,6 +45,26 @@ export const login = async (req, res) => {
   }
 };
 
+export const register = async (req, res) => {
+  try {
+    const { name, email, password } = req.body;
+    if (await User.findByEmail(email)) {
+      return res.status(409).json({ message: 'Email is already registered' });
+    }
+
+    const user = await User.create({ name, email, password });
+    res.status(201).json({
+      message: 'Account created successfully',
+      token: generateToken(user._id),
+      user: user.toPublicProfile()
+    });
+  } catch (error) {
+    if (error.code === 11000) return res.status(409).json({ message: 'Email is already registered' });
+    console.error('Registration error:', error);
+    res.status(500).json({ message: 'Server error creating account' });
+  }
+};
+
 export const getCurrentUser = async (req, res) => {
   try {
     // JWT auth from middleware

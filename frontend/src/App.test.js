@@ -58,6 +58,17 @@ beforeEach(() => {
     removeEventListener: jest.fn(),
     dispatchEvent: jest.fn()
   }));
+  Object.defineProperty(window, 'crypto', {
+    configurable: true,
+    value: {
+      getRandomValues: (values) => {
+        values.forEach((_, index) => {
+          values[index] = Math.floor(Math.random() * 0xffffffff);
+        });
+        return values;
+      }
+    }
+  });
 });
 
 afterEach(() => {
@@ -97,6 +108,36 @@ test('logs in and loads the home page', async () => {
   expect(global.fetch).toHaveBeenNthCalledWith(
     1,
     expect.stringContaining('/api/auth/login'),
+    expect.objectContaining({ method: 'POST' })
+  );
+});
+
+test('suggests a strong password and submits signup details', async () => {
+  global.fetch
+    .mockResolvedValueOnce(
+      jsonResponse({
+        token: 'signup-token',
+        user: { _id: 'user-2', name: 'New Reader', email: 'new@example.com' }
+      })
+    )
+    .mockResolvedValueOnce(jsonResponse({ posts: [] }));
+
+  renderApp('/signup');
+
+  fireEvent.change(screen.getByPlaceholderText('Your name'), { target: { value: 'New Reader' } });
+  fireEvent.change(screen.getByPlaceholderText('Enter your email'), { target: { value: 'new@example.com' } });
+  fireEvent.click(screen.getByRole('button', { name: /suggest a strong password/i }));
+
+  const password = screen.getByPlaceholderText('Create a strong password').value;
+  expect(password).toHaveLength(16);
+  expect(screen.getByPlaceholderText('Repeat your password').value).toBe(password);
+
+  fireEvent.click(screen.getByRole('button', { name: /create account/i }));
+
+  expect(await screen.findByText('Discover Stories')).toBeInTheDocument();
+  expect(global.fetch).toHaveBeenNthCalledWith(
+    1,
+    expect.stringContaining('/api/auth/register'),
     expect.objectContaining({ method: 'POST' })
   );
 });

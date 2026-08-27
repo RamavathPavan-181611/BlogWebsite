@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { LogIn } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../utils/api';
@@ -90,6 +90,12 @@ const LoginPage = () => {
               )}
             </button>
           </form>
+          <p className="text-center text-sm text-gray-400 mt-5">
+            New to BlogPlatform?{' '}
+            <Link to="/signup" className="text-primary-400 hover:text-primary-300 font-medium">
+              Create an account
+            </Link>
+          </p>
         </div>
       </div>
     </div>

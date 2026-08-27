@@ -56,6 +56,22 @@ describe('Backend API integration', () => {
     expect(response.body.post.author).to.have.property('email', 'integration@example.com');
   });
 
+  it('registers a new account and hashes its password', async () => {
+    const response = await chai
+      .request(app)
+      .post('/api/auth/register')
+      .send({
+        name: 'New Reader',
+        email: 'new-reader@example.com',
+        password: 'StrongPassword1!'
+      });
+
+    expect(response).to.have.status(201);
+    expect(response.body.user).to.not.have.property('password');
+    const createdUser = await User.findOne({ email: 'new-reader@example.com' });
+    expect(await bcrypt.compare('StrongPassword1!', createdUser.password)).to.equal(true);
+  });
+
   it('reports database readiness through the health endpoint', async () => {
     const response = await chai.request(app).get('/healthz');
 

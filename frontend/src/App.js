@@ -8,6 +8,7 @@ import CreatePostPage from './pages/CreatePostPage';
 import EditPostPage from './pages/EditPostPage';
 import PostDetailPage from './pages/PostDetailPage';
 import ProfilePage from './pages/ProfilePage';
+import SignupPage from './pages/SignupPage';
 import LoadingSpinner from './components/LoadingSpinner';
 import { useAuth } from './context/AuthContext';
 
@@ -44,6 +45,7 @@ function App() {
       />
       <Routes>
         <Route path="/login" element={user ? <Navigate to="/" /> : <LoginPage />} />
+        <Route path="/signup" element={user ? <Navigate to="/" /> : <SignupPage />} />
         <Route path="/" element={user ? <HomePage /> : <Navigate to="/login" />} />
         <Route path="/my-posts" element={user ? <MyPostsPage /> : <Navigate to="/login" />} />
         <Route path="/create" element={user ? <CreatePostPage /> : <Navigate to="/login" />} />
