@@ -69,6 +69,15 @@ export const validatePostId = param('id')
   .isMongoId()
   .withMessage('Invalid post ID format');
 
+export const validateCommentInput = body('content')
+  .trim()
+  .isLength({ min: 1, max: 2000 })
+  .withMessage('Comment must be between 1 and 2000 characters');
+
+export const validateCommentId = param('commentId')
+  .isMongoId()
+  .withMessage('Invalid comment ID format');
+
 export const handleValidationErrors = (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {

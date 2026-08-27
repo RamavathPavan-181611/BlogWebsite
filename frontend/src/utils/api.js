@@ -139,5 +139,29 @@ export const api = {
       headers: getAuthHeaders()
     });
     return readResponse(response);
+  },
+
+  getComments: async (postId) => {
+    const response = await fetch(`${API_BASE_URL}/posts/${postId}/comments`, {
+      headers: getAuthHeaders()
+    });
+    return readResponse(response);
+  },
+
+  createComment: async (postId, content) => {
+    const response = await fetch(`${API_BASE_URL}/posts/${postId}/comments`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ content })
+    });
+    return readResponse(response);
+  },
+
+  deleteComment: async (commentId) => {
+    const response = await fetch(`${API_BASE_URL}/posts/comments/${commentId}`, {
+      method: 'DELETE',
+      headers: getAuthHeaders()
+    });
+    return readResponse(response);
   }
 };

@@ -178,7 +178,7 @@ test('renders legacy post HTML as text instead of executable markup', async () =
         author: { _id: 'user-1', name: 'John Doe' }
       }
     })
-  );
+  ).mockResolvedValueOnce(jsonResponse({ comments: [] }));
 
   render(
     <MemoryRouter initialEntries={['/post/post-1']}>

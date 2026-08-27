@@ -5,7 +5,7 @@ import LoadingSpinner from '../components/LoadingSpinner';
 import { api } from '../utils/api';
 import { useAuth } from '../context/AuthContext';
 import toast from 'react-hot-toast';
-import { Calendar, Clock, Edit2, Trash2, ArrowLeft } from 'lucide-react';
+import { Calendar, Clock, Edit2, Trash2, ArrowLeft, Send } from 'lucide-react';
 
 const PostDetailPage = () => {
   const { id } = useParams();
@@ -14,6 +14,10 @@ const PostDetailPage = () => {
   const [post, setPost] = useState(null);
   const [loading, setLoading] = useState(true);
   const [deleteConfirm, setDeleteConfirm] = useState(false);
+  const [comments, setComments] = useState([]);
+  const [commentText, setCommentText] = useState('');
+  const [commentsLoading, setCommentsLoading] = useState(true);
+  const [commentSubmitting, setCommentSubmitting] = useState(false);
 
   useEffect(() => {
     const loadPost = async () => {
@@ -31,6 +35,21 @@ const PostDetailPage = () => {
     loadPost();
   }, [id, navigate]);
 
+  useEffect(() => {
+    const loadComments = async () => {
+      try {
+        const response = await api.getComments(id);
+        setComments(response.comments);
+      } catch (error) {
+        toast.error('Failed to load comments');
+      } finally {
+        setCommentsLoading(false);
+      }
+    };
+
+    loadComments();
+  }, [id]);
+
   const handleDelete = async () => {
     try {
       await api.deletePost(id);
@@ -39,6 +58,33 @@ const PostDetailPage = () => {
     } catch (error) {
       toast.error('Failed to delete post');
       console.error(error);
+    }
+  };
+
+  const handleCommentSubmit = async (event) => {
+    event.preventDefault();
+    if (!commentText.trim()) return;
+
+    setCommentSubmitting(true);
+    try {
+      const response = await api.createComment(id, commentText.trim());
+      setComments((previous) => [response.comment, ...previous]);
+      setCommentText('');
+      toast.success('Comment added');
+    } catch (error) {
+      toast.error(error.message || 'Failed to add comment');
+    } finally {
+      setCommentSubmitting(false);
+    }
+  };
+
+  const handleCommentDelete = async (commentId) => {
+    try {
+      await api.deleteComment(commentId);
+      setComments((previous) => previous.filter((comment) => comment._id !== commentId));
+      toast.success('Comment deleted');
+    } catch (error) {
+      toast.error(error.message || 'Failed to delete comment');
     }
   };
 
@@ -200,6 +246,62 @@ const PostDetailPage = () => {
             </div>
           )}
         </article>
+
+        <section className="card mt-6">
+          <div className="flex items-center justify-between mb-5">
+            <h2 className="text-2xl font-bold text-gray-100">Comments</h2>
+            <span className="text-sm text-gray-500">{comments.length}</span>
+          </div>
+
+          {user ? (
+            <form onSubmit={handleCommentSubmit} className="mb-6">
+              <label htmlFor="comment-content" className="sr-only">Add a comment</label>
+              <textarea
+                id="comment-content"
+                value={commentText}
+                onChange={(event) => setCommentText(event.target.value)}
+                className="input-field min-h-24"
+                placeholder="Share your thoughts..."
+                maxLength="2000"
+                required
+              />
+              <button type="submit" disabled={commentSubmitting} className="btn-primary mt-3 flex items-center gap-2">
+                <Send size={16} /> {commentSubmitting ? 'Posting...' : 'Post comment'}
+              </button>
+            </form>
+          ) : (
+            <p className="text-gray-400 mb-6">Sign in to join the conversation.</p>
+          )}
+
+          {commentsLoading ? (
+            <LoadingSpinner />
+          ) : comments.length === 0 ? (
+            <p className="text-gray-500">No comments yet. Start the conversation.</p>
+          ) : (
+            <div className="space-y-4">
+              {comments.map((comment) => (
+                <article key={comment._id} className="border-t border-gray-800 pt-4">
+                  <div className="flex items-start justify-between gap-4">
+                    <div>
+                      <p className="font-medium text-gray-200">{comment.author?.name}</p>
+                      <p className="text-xs text-gray-500">{formatDate(comment.createdAt)}</p>
+                    </div>
+                    {user?._id === comment.author?._id && (
+                      <button
+                        type="button"
+                        onClick={() => handleCommentDelete(comment._id)}
+                        className="text-sm text-error-400 hover:text-error-300"
+                      >
+                        Delete
+                      </button>
+                    )}
+                  </div>
+                  <p className="text-gray-300 mt-3 whitespace-pre-wrap break-words">{comment.content}</p>
+                </article>
+              ))}
+            </div>
+          )}
+        </section>
 
         {deleteConfirm && (
           <div className="bg-gray-custom border border-error-500/50 rounded-xl p-6 shadow-lg mt-6">
