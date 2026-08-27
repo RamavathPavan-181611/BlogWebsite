@@ -153,3 +153,22 @@ test('renders legacy post HTML as text instead of executable markup', async () =
   expect(screen.getByText(/alert\(1\)/)).toBeInTheDocument();
   expect(document.querySelector('script')).not.toBeInTheDocument();
 });
+
+test('opens the profile page for an authenticated user', async () => {
+  localStorage.setItem('authToken', 'test-token');
+  localStorage.setItem(
+    'user',
+    JSON.stringify({
+      _id: 'user-1',
+      name: 'John Doe',
+      email: 'john@example.com',
+      bio: 'A writer'
+    })
+  );
+
+  renderApp('/profile');
+
+  expect(await screen.findByRole('heading', { name: 'Your Profile' })).toBeInTheDocument();
+  expect(screen.getByDisplayValue('john@example.com')).toBeInTheDocument();
+  expect(screen.getByRole('link', { name: 'John Doe' })).toHaveAttribute('href', '/profile');
+});

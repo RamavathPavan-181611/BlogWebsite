@@ -1,5 +1,6 @@
 import chai from 'chai';
 import chaiHttp from 'chai-http';
+import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import mongoose from 'mongoose';
 import app from '../app.js';
@@ -63,6 +64,40 @@ describe('Backend API integration', () => {
       status: 'ok',
       database: 'connected'
     });
+  });
+
+  it('updates profile information for the authenticated user', async () => {
+    const response = await chai
+      .request(app)
+      .put('/api/auth/profile')
+      .set('Authorization', `Bearer ${token}`)
+      .send({
+        name: 'Updated Integration User',
+        bio: 'A profile bio for testing',
+        location: 'Chennai, India',
+        website: 'https://example.com'
+      });
+
+    expect(response).to.have.status(200);
+    expect(response.body.user).to.include({
+      name: 'Updated Integration User',
+      bio: 'A profile bio for testing',
+      location: 'Chennai, India',
+      website: 'https://example.com'
+    });
+  });
+
+  it('changes the password only after verifying the current password', async () => {
+    const response = await chai
+      .request(app)
+      .put('/api/auth/password')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ currentPassword: 'Password123', newPassword: 'NewPassword123' });
+
+    expect(response).to.have.status(200);
+    const updatedUser = await User.findById(user._id);
+    expect(await bcrypt.compare('NewPassword123', updatedUser.password)).to.equal(true);
+    expect(await bcrypt.compare('Password123', updatedUser.password)).to.equal(false);
   });
 
   it('supports the authenticated my-posts route and bounded pagination', async () => {

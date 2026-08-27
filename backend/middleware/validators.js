@@ -22,6 +22,19 @@ export const validatePassword = body('password')
 
 export const validateLoginInput = [validateEmail, validatePassword];
 
+export const validateProfileInput = [
+  body('name').optional().trim().isLength({ min: 2, max: 100 }).withMessage('Name must be between 2 and 100 characters'),
+  body('email').optional().isEmail().normalizeEmail().withMessage('Invalid email format'),
+  body('bio').optional().trim().isLength({ max: 500 }).withMessage('Bio must be less than 500 characters'),
+  body('location').optional().trim().isLength({ max: 120 }).withMessage('Location must be less than 120 characters'),
+  body('website').optional().trim().isURL({ protocols: ['http', 'https'], require_protocol: true }).withMessage('Website must be a valid URL')
+];
+
+export const validatePasswordChangeInput = [
+  body('currentPassword').isLength({ min: 6 }).withMessage('Current password must be at least 6 characters'),
+  body('newPassword').isLength({ min: 6 }).withMessage('New password must be at least 6 characters')
+];
+
 export const validatePostInput = [
   body('title')
     .trim()

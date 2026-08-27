@@ -59,6 +59,24 @@ export const api = {
     return readResponse(response);
   },
 
+  updateProfile: async (profileData) => {
+    const response = await fetch(`${API_BASE_URL}/auth/profile`, {
+      method: 'PUT',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(profileData)
+    });
+    return readResponse(response);
+  },
+
+  updatePassword: async (passwordData) => {
+    const response = await fetch(`${API_BASE_URL}/auth/password`, {
+      method: 'PUT',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(passwordData)
+    });
+    return readResponse(response);
+  },
+
   logout: async () => {
     localStorage.removeItem('authToken');
     localStorage.removeItem('user');

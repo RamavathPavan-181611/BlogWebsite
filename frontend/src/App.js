@@ -7,10 +7,16 @@ import MyPostsPage from './pages/MyPostsPage';
 import CreatePostPage from './pages/CreatePostPage';
 import EditPostPage from './pages/EditPostPage';
 import PostDetailPage from './pages/PostDetailPage';
+import ProfilePage from './pages/ProfilePage';
+import LoadingSpinner from './components/LoadingSpinner';
 import { useAuth } from './context/AuthContext';
 
 function App() {
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
+
+  if (loading) {
+    return <LoadingSpinner />;
+  }
 
   return (
     <div className="App min-h-screen bg-black">
@@ -43,6 +49,7 @@ function App() {
         <Route path="/create" element={user ? <CreatePostPage /> : <Navigate to="/login" />} />
         <Route path="/edit/:id" element={user ? <EditPostPage /> : <Navigate to="/login" />} />
         <Route path="/post/:id" element={user ? <PostDetailPage /> : <Navigate to="/login" />} />
+        <Route path="/profile" element={user ? <ProfilePage /> : <Navigate to="/login" />} />
       </Routes>
     </div>
   );

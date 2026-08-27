@@ -65,3 +65,43 @@ export const getCurrentUser = async (req, res) => {
   }
 };
 
+export const updateProfile = async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id);
+    if (!user) return res.status(404).json({ message: 'User not found' });
+
+    const { name, email, bio, location, website } = req.body;
+    if (name !== undefined) user.name = name.trim();
+    if (email !== undefined) user.email = email.trim().toLowerCase();
+    if (bio !== undefined) user.bio = bio.trim();
+    if (location !== undefined) user.location = location.trim();
+    if (website !== undefined) user.website = website.trim();
+
+    await user.save();
+    res.status(200).json({ message: 'Profile updated successfully', user: user.toPublicProfile() });
+  } catch (error) {
+    if (error.code === 11000) return res.status(409).json({ message: 'Email is already in use' });
+    console.error('Update profile error:', error);
+    res.status(500).json({ message: 'Server error updating profile' });
+  }
+};
+
+export const updatePassword = async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id);
+    if (!user) return res.status(404).json({ message: 'User not found' });
+
+    const { currentPassword, newPassword } = req.body;
+    if (!(await user.comparePassword(currentPassword))) {
+      return res.status(401).json({ message: 'Current password is incorrect' });
+    }
+
+    user.password = newPassword;
+    await user.save();
+    res.status(200).json({ message: 'Password updated successfully' });
+  } catch (error) {
+    console.error('Update password error:', error);
+    res.status(500).json({ message: 'Server error updating password' });
+  }
+};
+

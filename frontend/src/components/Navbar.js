@@ -74,9 +74,9 @@ const Navbar = () => {
                     {user?.name?.charAt(0).toUpperCase()}
                   </span>
                 </div>
-                <span className="hidden md:inline text-sm font-medium text-gray-300">
+                <Link to="/profile" className="hidden md:inline text-sm font-medium text-gray-300 hover:text-white transition-colors">
                   {user?.name}
-                </span>
+                </Link>
               </div>
 
               <button
