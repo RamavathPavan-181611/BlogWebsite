@@ -85,7 +85,7 @@ test('logs in and loads the home page', async () => {
     target: { value: 'john@example.com' }
   });
   fireEvent.change(screen.getByPlaceholderText('Enter your password'), {
-    target: { value: 'Password123' }
+    target: { value: 'password123' }
   });
   fireEvent.click(screen.getByRole('button', { name: /sign in/i }));
 

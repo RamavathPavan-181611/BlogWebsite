@@ -18,9 +18,7 @@ export const validateEmail = body('email')
 
 export const validatePassword = body('password')
   .isLength({ min: 6 })
-  .withMessage('Password must be at least 6 characters')
-  .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/)
-  .withMessage('Password must contain lowercase, uppercase, and number');
+  .withMessage('Password must be at least 6 characters');
 
 export const validateLoginInput = [validateEmail, validatePassword];
 
