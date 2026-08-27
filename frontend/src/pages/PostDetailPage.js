@@ -5,7 +5,7 @@ import LoadingSpinner from '../components/LoadingSpinner';
 import { api } from '../utils/api';
 import { useAuth } from '../context/AuthContext';
 import toast from 'react-hot-toast';
-import { Calendar, Clock, Edit2, Trash2, ArrowLeft, Send } from 'lucide-react';
+import { Calendar, Clock, Edit2, Trash2, ArrowLeft, Send, Heart, Bookmark } from 'lucide-react';
 
 const PostDetailPage = () => {
   const { id } = useParams();
@@ -18,6 +18,8 @@ const PostDetailPage = () => {
   const [commentText, setCommentText] = useState('');
   const [commentsLoading, setCommentsLoading] = useState(true);
   const [commentSubmitting, setCommentSubmitting] = useState(false);
+  const [engagement, setEngagement] = useState({ likes: 0, bookmarks: 0, liked: false, bookmarked: false });
+  const [engagementLoading, setEngagementLoading] = useState(true);
 
   useEffect(() => {
     const loadPost = async () => {
@@ -48,6 +50,21 @@ const PostDetailPage = () => {
     };
 
     loadComments();
+  }, [id]);
+
+  useEffect(() => {
+    const loadEngagement = async () => {
+      try {
+        const response = await api.getEngagement(id);
+        setEngagement(response);
+      } catch (error) {
+        toast.error('Failed to load likes and bookmarks');
+      } finally {
+        setEngagementLoading(false);
+      }
+    };
+
+    loadEngagement();
   }, [id]);
 
   const handleDelete = async () => {
@@ -85,6 +102,32 @@ const PostDetailPage = () => {
       toast.success('Comment deleted');
     } catch (error) {
       toast.error(error.message || 'Failed to delete comment');
+    }
+  };
+
+  const toggleLike = async () => {
+    if (!user) {
+      toast.error('Sign in to like this post');
+      return;
+    }
+    try {
+      const response = await api.toggleLike(id);
+      setEngagement((previous) => ({ ...previous, liked: response.active, likes: response.count }));
+    } catch (error) {
+      toast.error(error.message || 'Failed to update like');
+    }
+  };
+
+  const toggleBookmark = async () => {
+    if (!user) {
+      toast.error('Sign in to bookmark this post');
+      return;
+    }
+    try {
+      const response = await api.toggleBookmark(id);
+      setEngagement((previous) => ({ ...previous, bookmarked: response.active, bookmarks: response.count }));
+    } catch (error) {
+      toast.error(error.message || 'Failed to update bookmark');
     }
   };
 
@@ -224,6 +267,31 @@ const PostDetailPage = () => {
                 <span>{post.readTime} min read</span>
               </div>
             </div>
+          </div>
+
+          <div className="flex items-center gap-3 mb-8">
+            <button
+              type="button"
+              onClick={toggleLike}
+              disabled={engagementLoading}
+              className={`flex items-center gap-2 rounded-lg border px-3 py-2 text-sm transition-colors ${engagement.liked ? 'border-error-500/50 text-error-400 bg-error-500/10' : 'border-gray-700 text-gray-400 hover:text-error-400'}`}
+              aria-pressed={engagement.liked}
+              title="Like post"
+            >
+              <Heart size={17} fill={engagement.liked ? 'currentColor' : 'none'} />
+              <span>{engagement.likes}</span>
+            </button>
+            <button
+              type="button"
+              onClick={toggleBookmark}
+              disabled={engagementLoading}
+              className={`flex items-center gap-2 rounded-lg border px-3 py-2 text-sm transition-colors ${engagement.bookmarked ? 'border-primary-500/50 text-primary-400 bg-primary-500/10' : 'border-gray-700 text-gray-400 hover:text-primary-400'}`}
+              aria-pressed={engagement.bookmarked}
+              title="Bookmark post"
+            >
+              <Bookmark size={17} fill={engagement.bookmarked ? 'currentColor' : 'none'} />
+              <span>{engagement.bookmarks}</span>
+            </button>
           </div>
 
           <div 

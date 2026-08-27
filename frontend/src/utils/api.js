@@ -163,5 +163,28 @@ export const api = {
       headers: getAuthHeaders()
     });
     return readResponse(response);
+  },
+
+  getEngagement: async (postId) => {
+    const response = await fetch(`${API_BASE_URL}/posts/${postId}/engagement`, {
+      headers: getAuthHeaders()
+    });
+    return readResponse(response);
+  },
+
+  toggleLike: async (postId) => {
+    const response = await fetch(`${API_BASE_URL}/posts/${postId}/like`, {
+      method: 'POST',
+      headers: getAuthHeaders()
+    });
+    return readResponse(response);
+  },
+
+  toggleBookmark: async (postId) => {
+    const response = await fetch(`${API_BASE_URL}/posts/${postId}/bookmark`, {
+      method: 'POST',
+      headers: getAuthHeaders()
+    });
+    return readResponse(response);
   }
 };

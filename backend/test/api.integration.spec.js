@@ -8,6 +8,7 @@ import { getJwtSecret } from '../config/auth.js';
 import Post from '../models/Post.js';
 import Comment from '../models/Comment.js';
 import User from '../models/User.js';
+import Interaction from '../models/Interaction.js';
 
 chai.use(chaiHttp);
 const { expect } = chai;
@@ -24,6 +25,7 @@ describe('Backend API integration', () => {
     );
     await Post.deleteMany({});
     await Comment.deleteMany({});
+    await Interaction.deleteMany({});
     await User.deleteMany({});
 
     user = await User.create({
@@ -43,6 +45,7 @@ describe('Backend API integration', () => {
   after(async () => {
     await Post.deleteMany({});
     await Comment.deleteMany({});
+    await Interaction.deleteMany({});
     await User.deleteMany({});
     await mongoose.disconnect();
   });
@@ -159,5 +162,32 @@ describe('Backend API integration', () => {
       .delete(`/api/posts/comments/${createResponse.body.comment._id}`)
       .set('Authorization', `Bearer ${token}`);
     expect(deleteResponse).to.have.status(200);
+  });
+
+  it('toggles likes and bookmarks without creating duplicates', async () => {
+    const likeResponse = await chai
+      .request(app)
+      .post(`/api/posts/${commentPost._id}/like`)
+      .set('Authorization', `Bearer ${token}`);
+    expect(likeResponse).to.have.status(200);
+    expect(likeResponse.body).to.include({ type: 'like', active: true, count: 1 });
+
+    const duplicateLikeResponse = await chai
+      .request(app)
+      .post(`/api/posts/${commentPost._id}/like`)
+      .set('Authorization', `Bearer ${token}`);
+    expect(duplicateLikeResponse.body).to.include({ type: 'like', active: false, count: 0 });
+
+    const bookmarkResponse = await chai
+      .request(app)
+      .post(`/api/posts/${commentPost._id}/bookmark`)
+      .set('Authorization', `Bearer ${token}`);
+    expect(bookmarkResponse).to.have.status(200);
+
+    const engagementResponse = await chai
+      .request(app)
+      .get(`/api/posts/${commentPost._id}/engagement`)
+      .set('Authorization', `Bearer ${token}`);
+    expect(engagementResponse.body).to.deep.include({ likes: 0, bookmarks: 1, liked: false, bookmarked: true });
   });
 });

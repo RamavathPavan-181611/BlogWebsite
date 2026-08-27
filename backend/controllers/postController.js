@@ -3,6 +3,7 @@ import mongoose from 'mongoose';
 import { sanitizeTags, sanitizeText } from '../utils/sanitize.js';
 import { postCategories } from '../middleware/validators.js';
 import Comment from '../models/Comment.js';
+import Interaction from '../models/Interaction.js';
 
 const getPaging = (query) => ({
   page: Math.max(Number.parseInt(query.page, 10) || 1, 1),
@@ -262,3 +263,50 @@ export const deleteComment = async (req, res) => {
     res.status(500).json({ message: 'Server error deleting comment' });
   }
 };
+
+export const getEngagement = async (req, res) => {
+  try {
+    const { id } = req.params;
+    if (!mongoose.Types.ObjectId.isValid(id)) return res.status(400).json({ message: 'Invalid post ID' });
+    if (!(await Post.exists({ _id: id }))) return res.status(404).json({ message: 'Post not found' });
+
+    const [likes, bookmarks, userInteractions] = await Promise.all([
+      Interaction.countDocuments({ post: id, type: 'like' }),
+      Interaction.countDocuments({ post: id, type: 'bookmark' }),
+      req.user
+        ? Interaction.find({ post: id, user: req.user.id }).select('type -_id')
+        : []
+    ]);
+    const interactionTypes = userInteractions.map((interaction) => interaction.type);
+    res.status(200).json({
+      likes,
+      bookmarks,
+      liked: interactionTypes.includes('like'),
+      bookmarked: interactionTypes.includes('bookmark')
+    });
+  } catch (error) {
+    console.error('Get engagement error:', error);
+    res.status(500).json({ message: 'Server error fetching engagement' });
+  }
+};
+
+const toggleInteraction = async (req, res, type) => {
+  const { id } = req.params;
+  const user = req.user?.id;
+  if (!user) return res.status(401).json({ message: 'Not authenticated' });
+  if (!mongoose.Types.ObjectId.isValid(id)) return res.status(400).json({ message: 'Invalid post ID' });
+  if (!(await Post.exists({ _id: id }))) return res.status(404).json({ message: 'Post not found' });
+
+  const existing = await Interaction.findOne({ post: id, user, type });
+  if (existing) {
+    await existing.deleteOne();
+  } else {
+    await Interaction.create({ post: id, user, type });
+  }
+
+  const count = await Interaction.countDocuments({ post: id, type });
+  res.status(200).json({ type, active: !existing, count });
+};
+
+export const toggleLike = (req, res) => toggleInteraction(req, res, 'like');
+export const toggleBookmark = (req, res) => toggleInteraction(req, res, 'bookmark');
