@@ -4,12 +4,16 @@ echo "Setting up BlogPlatform..."
 
 # Start MongoDB if not already running
 echo "Checking MongoDB status..."
-if pgrep mongod > /dev/null; then
+if pgrep -x "mongod" > /dev/null; then
   echo "MongoDB is already running"
 else
   echo "Starting MongoDB..."
-  mongod --config /etc/mongod.conf --fork > /dev/null
-  if [ $? -eq 0 ]; then
+  if [[ "$OSTYPE" == "darwin"* ]]; then
+    brew services start mongodb-community || mongod --config /usr/local/etc/mongod.conf --fork > /dev/null
+  else
+    mongod --config /etc/mongod.conf --fork > /dev/null || sudo systemctl start mongod
+  fi
+  if pgrep -x "mongod" > /dev/null; then
     echo "MongoDB started successfully"
   else
     echo "Warning: Could not start MongoDB. Please ensure MongoDB is installed and configured."

@@ -1,8 +1,9 @@
 import mongoose from 'mongoose';
 
 const connectionString =
-  process.env.MONGODB_URI ||
-  'mongodb://127.0.0.1:27017/BlogPlatform?directConnection=true&serverSelectionTimeoutMS=2000';
+  process.env.NODE_ENV === 'test'
+    ? (process.env.MONGODB_TEST_URI || 'mongodb://127.0.0.1:27017/BlogPlatform_test?directConnection=true&serverSelectionTimeoutMS=2000')
+    : (process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/BlogPlatform?directConnection=true&serverSelectionTimeoutMS=2000');
 
 const connectDatabase = async () => {
   try {

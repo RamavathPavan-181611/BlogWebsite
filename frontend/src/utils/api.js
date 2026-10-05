@@ -94,8 +94,15 @@ export const api = {
   },
 
   // Posts
-  getAllPosts: async () => {
-    const response = await fetch(`${API_BASE_URL}/posts`, {
+  getAllPosts: async ({ search, category, page, limit } = {}) => {
+    const params = new URLSearchParams();
+    if (search) params.set('search', search);
+    if (category) params.set('category', category);
+    if (page) params.set('page', page);
+    if (limit) params.set('limit', limit);
+
+    const query = params.toString();
+    const response = await fetch(`${API_BASE_URL}/posts${query ? `?${query}` : ''}`, {
       headers: getAuthHeaders()
     });
     return readResponse(response);

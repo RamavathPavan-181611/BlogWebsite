@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import Navbar from '../components/Navbar';
 import PostCard from '../components/PostCard';
 import LoadingSpinner from '../components/LoadingSpinner';
@@ -6,58 +6,81 @@ import { api } from '../utils/api';
 import toast from 'react-hot-toast';
 import { Search, Filter } from 'lucide-react';
 
+// How long to wait after the user stops typing before firing the network request.
+const DEBOUNCE_MS = 400;
+
+const categories = [
+  'All',
+  'Technology',
+  'Lifestyle',
+  'Travel',
+  'Food',
+  'Business',
+  'Health',
+  'Education',
+  'Entertainment'
+];
+
 const HomePage = () => {
   const [posts, setPosts] = useState([]);
-  const [filteredPosts, setFilteredPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
 
-  const categories = [
-    'All',
-    'Technology',
-    'Lifestyle',
-    'Travel',
-    'Food',
-    'Business',
-    'Health',
-    'Education',
-    'Entertainment'
-  ];
+  // Tracks the latest in-flight request so stale responses are discarded.
+  const abortControllerRef = useRef(null);
+  // Tracks the debounce timer id.
+  const debounceTimerRef = useRef(null);
 
-  useEffect(() => {
-    fetchPosts();
-  }, []);
-
-  useEffect(() => {
-    let filtered = posts;
-
-    if (selectedCategory !== 'All') {
-      filtered = filtered.filter((post) => post.category === selectedCategory);
+  /**
+   * Fetch posts from the server with the current search + category params.
+   * Cancels any previous in-flight request to prevent race conditions.
+   */
+  const fetchPosts = useCallback(async (search, category) => {
+    // Cancel the previous request if it's still in flight.
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
     }
 
-    if (searchQuery) {
-      filtered = filtered.filter((post) =>
-        post.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        post.excerpt?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        post.author.name.toLowerCase().includes(searchQuery.toLowerCase())
-      );
-    }
+    setLoading(true);
 
-    setFilteredPosts(filtered);
-  }, [searchQuery, selectedCategory, posts]);
-
-  const fetchPosts = async () => {
     try {
-      const response = await api.getAllPosts();
-      setPosts(response.posts);
-      setFilteredPosts(response.posts);
+      const params = {};
+      if (search && search.trim()) params.search = search.trim();
+      if (category && category !== 'All') params.category = category;
+
+      const response = await api.getAllPosts(params);
+      setPosts(response.posts ?? []);
     } catch (error) {
-      toast.error('Failed to load posts');
-      console.error(error);
+      // AbortError is intentional – swallow it silently.
+      if (error.name !== 'AbortError') {
+        toast.error('Failed to load posts');
+        console.error(error);
+      }
     } finally {
       setLoading(false);
     }
+  }, []);
+
+  /**
+   * Whenever the search query changes, debounce the network call so we don't
+   * fire a request on every keystroke.
+   */
+  useEffect(() => {
+    clearTimeout(debounceTimerRef.current);
+    debounceTimerRef.current = setTimeout(() => {
+      fetchPosts(searchQuery, selectedCategory);
+    }, searchQuery ? DEBOUNCE_MS : 0); // No delay for category-only changes.
+
+    return () => clearTimeout(debounceTimerRef.current);
+  }, [searchQuery, selectedCategory, fetchPosts]);
+
+  const handleSearchChange = (e) => {
+    setSearchQuery(e.target.value);
+  };
+
+  const handleCategoryChange = (category) => {
+    setSelectedCategory(category);
   };
 
   return (
@@ -81,7 +104,7 @@ const HomePage = () => {
               type="text"
               placeholder="Search posts..."
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={handleSearchChange}
               className="input-field pl-12"
             />
           </div>
@@ -91,7 +114,7 @@ const HomePage = () => {
             {categories.map((category) => (
               <button
                 key={category}
-                onClick={() => setSelectedCategory(category)}
+                onClick={() => handleCategoryChange(category)}
                 className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${
                   selectedCategory === category
                     ? 'bg-primary-600 text-white'
@@ -106,7 +129,7 @@ const HomePage = () => {
 
         {loading ? (
           <LoadingSpinner />
-        ) : filteredPosts.length === 0 ? (
+        ) : posts.length === 0 ? (
           <div className="text-center py-12">
             <div className="w-16 h-16 bg-gray-950 border border-gray-900 rounded-full flex items-center justify-center mx-auto mb-4">
               <Search size={32} className="text-gray-600" />
@@ -118,7 +141,7 @@ const HomePage = () => {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredPosts.map((post) => (
+            {posts.map((post) => (
               <PostCard key={post._id} post={post} />
             ))}
           </div>
@@ -129,4 +152,3 @@ const HomePage = () => {
 };
 
 export default HomePage;
-

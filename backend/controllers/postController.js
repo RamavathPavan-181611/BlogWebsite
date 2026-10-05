@@ -186,7 +186,15 @@ export const deletePost = async (req, res) => {
       return res.status(403).json({ message: 'Not authorized to delete this post' });
     }
 
-    await Post.findByIdAndDelete(id);
+    // Cascade-delete the post AND all its related Comments + Interactions atomically.
+    // Running in parallel minimises latency; if either sub-deletion fails the outer
+    // try/catch will catch it and the client will receive a 500 rather than a silent
+    // partial deletion.
+    await Promise.all([
+      Post.findByIdAndDelete(id),
+      Comment.deleteMany({ post: id }),
+      Interaction.deleteMany({ post: id })
+    ]);
 
     res.status(200).json({ message: 'Post deleted successfully' });
   } catch (error) {
@@ -297,15 +305,22 @@ const toggleInteraction = async (req, res, type) => {
   if (!mongoose.Types.ObjectId.isValid(id)) return res.status(400).json({ message: 'Invalid post ID' });
   if (!(await Post.exists({ _id: id }))) return res.status(404).json({ message: 'Post not found' });
 
-  const existing = await Interaction.findOne({ post: id, user, type });
-  if (existing) {
-    await existing.deleteOne();
-  } else {
-    await Interaction.create({ post: id, user, type });
+  const filter = { post: id, user, type };
+  const removed = await Interaction.findOneAndDelete(filter);
+
+  if (!removed) {
+    try {
+      await Interaction.updateOne(filter, { $setOnInsert: filter }, { upsert: true });
+    } catch (error) {
+      // A concurrent request inserted the same interaction first. The unique
+      // index leaves the row present either way, which is the state this
+      // request was asking for, so this is a success rather than a conflict.
+      if (error.code !== 11000) throw error;
+    }
   }
 
   const count = await Interaction.countDocuments({ post: id, type });
-  res.status(200).json({ type, active: !existing, count });
+  res.status(200).json({ type, active: !removed, count });
 };
 
 export const toggleLike = (req, res) => toggleInteraction(req, res, 'like');

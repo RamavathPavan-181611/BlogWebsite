@@ -6,8 +6,8 @@
   "scripts": {
     "start": "node -r dotenv/config app.js",
     "seed": "node -r dotenv/config utils/seed.js",
-    "test:integration": "NODE_ENV=test MONGODB_URI='mongodb://127.0.0.1:27017/BlogPlatform_test?directConnection=true&serverSelectionTimeoutMS=2000' node -r dotenv/config ./node_modules/mocha/bin/mocha.js test/api.integration.spec.js --exit",
-    "test": "NODE_ENV=test MONGODB_URI='mongodb://127.0.0.1:27017/BlogPlatform_test?directConnection=true&serverSelectionTimeoutMS=2000' node -r dotenv/config ./node_modules/mocha/bin/mocha.js --reporter mocha-multi-reporters --reporter-options configFile=config.json test/api.integration.spec.js --exit"
+    "test:integration": "NODE_ENV=test node -r dotenv/config ./node_modules/mocha/bin/mocha.js test/api.integration.spec.js --exit",
+    "test": "NODE_ENV=test node -r dotenv/config ./node_modules/mocha/bin/mocha.js --reporter mocha-multi-reporters --reporter-options configFile=config.json test/api.integration.spec.js --exit"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",

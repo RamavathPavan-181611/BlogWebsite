@@ -396,3 +396,4 @@ npm --prefix frontend install
 9. **Add CI/CD pipeline** (GitHub Actions)
 10. **Add Docker support** for easy deployment
 ```
+

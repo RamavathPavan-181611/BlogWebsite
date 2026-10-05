@@ -1,186 +1,224 @@
 # BlogPlatform
 
-BlogPlatform is a MERN blog application for browsing, creating, editing, and
-deleting posts. The frontend is a React application and the backend is an
-Express API backed by MongoDB and Mongoose.
+BlogPlatform is a full-stack blog application built with a React frontend, an Express API, and MongoDB for persistence. It supports user authentication, blog post creation/editing, comments, likes, bookmarks, profile management, and category-based browsing.
 
-## Current Status
+## Project status
 
-The project is functional for local development, but it is not yet ready for
-production use. Known release blockers include unsafe post-content rendering,
-outdated backend tests, category validation mismatches, production CORS
-configuration, dependency vulnerabilities, and incomplete production
-configuration. See `RUNNING.md` for the safe local workflow.
+Current status: working for local development and verified in the current workspace.
+
+Verified in this project:
+
+- Backend test suite passes: 8 passing
+- Frontend production build succeeds: React app compiles successfully
+- Local development flow is set up with a MongoDB-backed Express API and a React client
+
+Important note:
+
+- This repository is not a production-hardening project yet. It is suitable for local development, demos, and iteration.
+- You must still provide a real local MongoDB instance and a secure JWT secret before running it beyond a disposable development environment.
+
+## Tech stack
+
+- Frontend: React 18, React Router, Tailwind CSS, Lucide icons
+- Backend: Node.js, Express, Mongoose, JWT auth, Helmet, CORS, input validation
+- Database: MongoDB
+- Testing: Mocha + Chai
 
 ## Features
 
-- Browse published posts
-- Search posts and filter by category
-- View post details and metadata
-- Authenticate with JWT-based login
-- Create, edit, and delete posts as an authenticated user
-- Add excerpts, tags, categories, and reading-time information
-- Hash user passwords with bcryptjs when saved through the Mongoose model
-- Apply request validation, rate limiting, Helmet security headers, and CORS
+- User registration and login
+- JWT-based authenticated sessions
+- Browse all posts and filter by category
+- Search posts by title, excerpt, or author
+- View post detail pages
+- Create, edit, and delete your own posts
+- Profile page with account info and password update
+- Comments on posts
+- Like and bookmark interactions
+- Sanitization of user-generated post content
+- Seed data for quick local testing
 
-## Requirements
-
-### Runtime requirements
-
-- Node.js 18 or newer
-- npm 9 or newer
-- MongoDB 6 or newer running locally or available through a connection URI
-- A modern browser such as Chrome, Firefox, Safari, or Edge
-
-### Development requirements
-
-- A disposable MongoDB database for local seeding and tests
-- The root, backend, and frontend dependencies installed with npm
-- A strong `JWT_SECRET` configured outside source control before deployment
-- A frontend origin explicitly configured in the backend CORS policy
-- Separate databases for development and automated tests
-
-### Functional requirements
-
-- Users must authenticate before creating, editing, or deleting posts.
-- Post titles must be between 3 and 200 characters.
-- Post content must contain at least 10 characters.
-- Posts must have a category accepted consistently by both frontend and backend.
-- Only the post owner should be able to edit or delete that post.
-- Invalid or expired JWTs must not grant access to protected endpoints.
-- User passwords must never be stored or logged in plaintext.
-- User-generated post content must be rendered safely without executable HTML.
-
-### Production requirements
-
-Before deploying, the project should also have:
-
-- Secrets supplied through a production secret manager or environment variables
-- HTTPS enabled for the frontend and API
-- A production MongoDB deployment with backups and restricted network access
-- Pinned and patched dependencies with a clean high-severity security audit
-- Pagination, query limits, and indexes for post listing endpoints
-- Structured application logging, health checks, and error monitoring
-- Updated API integration tests and frontend workflow tests in CI
-- A documented deployment process and a non-empty project-specific runbook
-
-## Project Structure
+## Project structure
 
 ```text
-backend/
-	app.js                 Express application entry point
-	config/                Database configuration
-	controllers/           Authentication and post handlers
-	middleware/            Authentication, validation, rate limiting, and errors
-	models/                Mongoose User and Post models
-	routes/                API route definitions
-	data/                  Sample seed data
-	test/                  Backend integration tests
-	utils/                 Database seed script and legacy utility files
-frontend/
-	public/                Browser and application metadata
-	src/components/        Shared React components
-	src/context/           Authentication state
-	src/pages/              Application pages
-	src/utils/              API client and URL configuration
+post_creation/
+├── backend/
+│   ├── app.js
+│   ├── config/
+│   ├── controllers/
+│   ├── data/
+│   ├── middleware/
+│   ├── models/
+│   ├── routes/
+│   ├── test/
+│   ├── utils/
+│   ├── package.json
+│   └── package-lock.json
+├── frontend/
+│   ├── public/
+│   ├── src/
+│   ├── package.json
+│   └── package-lock.json
+├── scripts/
+├── .env.example
+├── .env
+├── package.json
+├── RUNNING.md
+├── BACKEND_IMPROVEMENTS.md
+├── BACKUPS.md
+├── PROJECT_ISSUES_ANALYSIS.md
+└── README.md
 ```
 
-## Configuration
+## Prerequisites
 
-Create a local environment file from the example:
+- Node.js 18+
+- npm
+- MongoDB running locally on port 27017 or a reachable MongoDB connection URI
+- A browser for the frontend app
 
-```sh
+## Environment setup
+
+From the project root, copy the example environment file:
+
+```bash
 cp .env.example .env
 ```
 
-At minimum, configure:
+Then confirm the environment values look like this:
 
 ```env
-MONGODB_URI=mongodb://127.0.0.1:27017/BlogPlatform_local
+MONGODB_URI=mongodb://127.0.0.1:27017/BlogPlatform_local?directConnection=true&serverSelectionTimeoutMS=2000
 PORT=8080
-JWT_SECRET=replace-with-a-long-random-secret
+JWT_SECRET=replace-with-a-long-random-production-secret
+CORS_ORIGINS=http://localhost:8000
 ```
 
-Never commit `.env`, production credentials, or a production database URI.
-The seed command deletes all users and posts in the configured database, so it
-must only be used with a disposable local database.
+Notes:
 
-## Installation
+- Do not commit your real `.env` file.
+- Keep MongoDB pointed only at a disposable local database during development.
+- The seed script clears the configured database before inserting sample records.
 
-From the project root:
+## Install dependencies
 
-```sh
+```bash
 npm install
 npm --prefix backend install
 npm --prefix frontend install
 ```
 
-Optionally load the sample users and posts:
+## Run locally
 
-```sh
-npm run seed
-```
+Start MongoDB first, then start the application:
 
-## Running Locally
-
-Start both applications:
-
-```sh
+```bash
 npm start
 ```
 
-The default development URLs are:
+Default local URLs:
 
-- Frontend: `http://localhost:8000`
-- Backend: `http://localhost:8080`
+- Frontend: http://localhost:8000
+- Backend: http://localhost:8080
 
-To run only one application:
+Check API health:
 
-```sh
-npm run backend
-npm run frontend
+```bash
+curl http://localhost:8080/healthz
 ```
 
-## Testing and Build
+Optional sample data:
 
-Run the backend test suite:
+```bash
+npm run seed
+```
 
-```sh
+## Root scripts
+
+```bash
+npm start        # run backend + frontend together
+npm run backend  # backend only
+npm run frontend # frontend only
+npm run seed     # populate local MongoDB with sample users/posts
+npm test         # run backend integration tests
+```
+
+## Testing and verification
+
+The current project has been validated with:
+
+```bash
 npm test
 ```
 
-Build the frontend for deployment:
+Result: 8 backend tests passing.
 
-```sh
-npm --prefix frontend run build
+Frontend build check:
+
+```bash
+cd frontend && npm run build
 ```
 
-The backend tests require a local MongoDB instance and use a separate
-`BlogPlatform_test` database. The frontend build currently completes with
-React hook dependency warnings; warnings should be resolved before release.
+Result: build succeeded and the production bundle was generated.
 
-## API Overview
+## API overview
 
-The backend exposes routes under `/api`:
+The backend exposes app routes under `/api`.
 
-- `POST /api/auth/login` - authenticate a user and receive a JWT
-- `GET /api/auth/me` - retrieve the authenticated user profile
-- `GET /api/posts` - list published posts
-- `GET /api/posts/:id` - retrieve a post
-- `GET /api/posts/my-posts` - list posts owned by the authenticated user
+### Auth
+
+- `POST /api/auth/register` - create an account
+- `POST /api/auth/login` - log in and receive a JWT
+- `GET /api/auth/me` - fetch the current authenticated user
+- `PUT /api/auth/profile` - update profile data
+- `PUT /api/auth/password` - change password
+
+### Posts
+
+- `GET /api/posts` - list posts
+- `GET /api/posts/:id` - fetch one post
+- `GET /api/posts/my-posts` - list posts for the authenticated user
 - `POST /api/posts` - create a post
-- `PUT /api/posts/:id` - update an owned post
+- `PUT /api/posts/:id` - edit an owned post
 - `DELETE /api/posts/:id` - delete an owned post
 
-Protected requests use the following header:
+### Engagement
 
-```text
-Authorization: Bearer <jwt-token>
+- `GET /api/posts/:id/comments` - fetch comments
+- `POST /api/posts/:id/comments` - create a comment
+- `DELETE /api/posts/comments/:commentId` - delete your own comment
+- `GET /api/posts/:id/engagement` - get likes/bookmarks counts
+- `POST /api/posts/:id/like` - toggle like
+- `POST /api/posts/:id/bookmark` - toggle bookmark
+
+Auth uses the standard header pattern:
+
+```http
+Authorization: Bearer <token>
 ```
 
-## Security Notes
+## Security and development notes
 
-This repository is intended for development until the release blockers above
-are addressed. In particular, do not expose the current deployment to public
-traffic while user-generated content is rendered as HTML, the JWT secret has a
-fallback value, or dependency audits report unresolved high/critical issues.
+This project includes basic protections such as:
+
+- JWT authentication
+- password hashing with bcrypt
+- validation middleware
+- rate limiting
+- Helmet security headers
+- MongoDB sanitization checks for post content
+
+However, it should still be treated as a development application until you apply deployment-level hardening, including:
+
+- secure secret management for JWT and database credentials
+- production-safe CORS configuration
+- HTTPS and a production deployment environment
+- dependency review and vulnerability remediation
+- proper production monitoring and backup strategy
+
+## Useful references
+
+- [RUNNING.md](RUNNING.md) for local workflow guidance
+- [BACKUPS.md](BACKUPS.md) for MongoDB backup instructions
+- [PROJECT_ISSUES_ANALYSIS.md](PROJECT_ISSUES_ANALYSIS.md) for issue notes and troubleshooting
+- [BACKEND_IMPROVEMENTS.md](BACKEND_IMPROVEMENTS.md) for backend improvement history
